@@ -1,14 +1,36 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <windows.h>
 #include <conio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <windows.h>
 
 #define SIZE 9
-
+int grid[9][9] = {
+    {5, 3, 4, 6, 7, 8, 9, 1, 2},
+    {6, 7, 2, 1, 9, 5, 3, 4, 8},
+    {1, 9, 8, 3, 4, 2, 5, 6, 7},
+    {8, 5, 9, 7, 6, 1, 4, 2, 3},
+    {4, 2, 6, 8, 5, 3, 7, 9, 1},
+    {7, 1, 3, 9, 2, 4, 8, 5, 6},
+    {9, 6, 1, 5, 3, 7, 2, 8, 4},
+    {2, 8, 7, 4, 1, 9, 6, 3, 5},
+    {3, 4, 5, 2, 8, 6, 1, 7, 9}
+};
+int errors[SIZE][SIZE] = {
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0}
+};
 typedef struct {
     int x;
     int y;
 } Coordinate;
+Coordinate cursor = {0, 0};
 
 typedef enum {
     KEY_UP = 72,
@@ -36,13 +58,23 @@ typedef enum {
     WHITE
 } Color;
 
-void setColor(int textColor, int backgroundColor) {
+typedef struct {
+    Color background;
+    Color text;
+} CellColors;
+
+void setColor(CellColors cellColors) {
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     // Combine text and background colors
-    SetConsoleTextAttribute(hConsole, (backgroundColor << 4) | textColor);
+    SetConsoleTextAttribute(hConsole, (cellColors.background << 4) | cellColors.text);
 }
 
-void printGrid(int grid[SIZE][SIZE], Coordinate cursor) {
+const CellColors NORMAL = {BLACK, WHITE};
+const CellColors SELECTED = {WHITE, BLACK};
+const CellColors FAIL = {RED, WHITE};
+const CellColors FAIL_SELECTED = {WHITE, RED};
+
+void printGrid() {
     for (int i = 0; i < SIZE; i++) {
         if (i % 3 == 0) {
             printf("+---------+---------+---------+\n");
@@ -52,44 +84,108 @@ void printGrid(int grid[SIZE][SIZE], Coordinate cursor) {
                 printf("|");
             }
             if (cursor.x == j && cursor.y == i) {
-                setColor(BLACK, LIGHT_GRAY);
+                setColor(SELECTED);
+                if (errors[i][j] == 1) {
+                    setColor(FAIL_SELECTED);
+                }
+
+            } else if (errors[i][j] == 1) {
+                setColor(FAIL);
             }
-            if (grid[i][j] == 0)
-            {
+
+            if (grid[i][j] == 0) {
                 printf("[ ]");
-            }
-            else
-            {
+            } else {
                 printf("[%d]", grid[i][j]);
             }
-            setColor(WHITE, BLACK);
+            setColor(NORMAL);
         }
         printf("|\n");
     }
     printf("+---------+---------+---------+\n");
-
 }
 
+void checkGridStatus() {
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            errors[i][j] = 0;
+        }
+    }
 
+    for (int i = 0; i < SIZE; i++) {
+        unsigned short seen = 0;
+        unsigned short rowRepeats = 0;
+        for (int j = 0; j < SIZE; j++) {
+            if (grid[i][j] == 0)
+                continue;
+            unsigned short flag = 1 << (grid[i][j] - 1); // ex: 5 - 1 = 4 -> 000000001 << 4 = 000010000 -> represents the fifth bit
+            if (seen & flag) {
+                rowRepeats |= flag;
+            } else {
+                seen |= flag;
+            }
+        }
+        for (int j = 0; j < SIZE; j++) {
+            if ((1 << (grid[i][j] - 1)) & rowRepeats) {
+                errors[i][j] = 1;
+            }
+        }
+    }
+    for (int j = 0; j < SIZE; j++) {
+        unsigned short seen = 0;
+        unsigned short colRepeats = 0;
+        for (int i = 0; i < SIZE; i++) {
+            if (grid[i][j] == 0)
+                continue;
+            unsigned short flag = 1 << (grid[i][j] - 1);
+            if (seen & flag) {
+                colRepeats |= flag;
+            } else {
+                seen |= flag;
+            }
+        }
+        for (int i = 0; i < SIZE; i++) {
+            if ((1 << (grid[i][j] - 1)) & colRepeats) {
+                errors[i][j] = 1;
+            }
+        }
+    }
+    for (int startRow = 0; startRow < SIZE; startRow += 3) {
+        for (int startCol = 0; startCol < SIZE; startCol += 3) {
+            unsigned short seen = 0;
+            unsigned short boxRepeats = 0;
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    if (grid[i + startRow][j + startCol] == 0)
+                        continue;
+                    unsigned short flag = 1 << (grid[i + startRow][j + startCol] - 1);
+                    if (seen & flag) {
+                        boxRepeats |= flag;
+                    } else {
+                        seen |= flag;
+                    }
+                }
+            }
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    if ((1 << grid[i + startRow][j + startCol] - 1) & boxRepeats) {
+                        errors[i + startRow][j + startCol] = 1;
+                    }
+                }
+            }
+        }
+    }
+}
 
 int main() {
-    int grid[SIZE][SIZE] = {
-     {0, 0, 0, 0, 0, 0, 0, 0, 0},
-     {0, 0, 0, 0, 0, 0, 0, 0, 0},
-     {0, 0, 0, 0, 0, 0, 0, 0, 0},
-     {0, 0, 0, 0, 0, 0, 0, 0, 0},
-     {0, 0, 0, 0, 0, 0, 0, 0, 0},
-     {0, 0, 0, 0, 0, 0, 0, 0, 0},
-     {0, 0, 0, 0, 0, 0, 0, 0, 1},
-     {0, 0, 0, 0, 0, 0, 0, 0, 0},
-     {0, 0, 0, 0, 0, 0, 0, 0, 0}
-    };
-    Coordinate cursor = { 0,0 };
+
     int x = 1;
     int key;
     while (x == 1) {
-        printGrid(grid, cursor);
+        checkGridStatus();
+        printGrid();
         key = _getch();
+        system("cls");
         printf("%d\n", key);
         if (key == 224) {
             switch (_getch()) {
@@ -111,9 +207,7 @@ int main() {
         if (key >= '0' && key <= '9') {
             grid[cursor.y][cursor.x] = key - '0';
         }
-
     }
-
 
     system("pause");
     return 0;
