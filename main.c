@@ -1,19 +1,20 @@
 #include <conio.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <windows.h>
 
 #define SIZE 9
 int grid[9][9] = {
-    {5, 3, 4, 6, 7, 8, 9, 1, 2},
-    {6, 7, 2, 1, 9, 5, 3, 4, 8},
-    {1, 9, 8, 3, 4, 2, 5, 6, 7},
-    {8, 5, 9, 7, 6, 1, 4, 2, 3},
-    {4, 2, 6, 8, 5, 3, 7, 9, 1},
-    {7, 1, 3, 9, 2, 4, 8, 5, 6},
-    {9, 6, 1, 5, 3, 7, 2, 8, 4},
-    {2, 8, 7, 4, 1, 9, 6, 3, 5},
-    {3, 4, 5, 2, 8, 6, 1, 7, 9}
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 3, 0, 8, 5},
+    {0, 0, 1, 0, 2, 0, 0, 0, 0},
+    {0, 0, 0, 5, 0, 7, 0, 0, 0},
+    {0, 0, 4, 0, 0, 0, 1, 0, 0},
+    {0, 9, 0, 0, 0, 0, 0, 0, 0},
+    {5, 0, 0, 0, 0, 0, 0, 7, 3},
+    {0, 0, 2, 0, 1, 0, 0, 0, 0},
+    {0, 0, 0, 0, 4, 0, 0, 0, 9}
 };
 int errors[SIZE][SIZE] = {
     {0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -177,38 +178,87 @@ void checkGridStatus() {
     }
 }
 
-int main() {
-
-    int x = 1;
-    int key;
-    while (x == 1) {
-        checkGridStatus();
-        printGrid();
-        key = _getch();
-        system("cls");
-        printf("%d\n", key);
-        if (key == 224) {
-            switch (_getch()) {
-            case KEY_UP:
-                cursor.y = (cursor.y - 1 + SIZE) % SIZE;
-                break;
-            case KEY_DOWN:
-                cursor.y = (cursor.y + 1) % SIZE;
-                break;
-            case KEY_LEFT:
-                cursor.x = (cursor.x - 1 + SIZE) % SIZE;
-                break;
-            case KEY_RIGHT:
-                cursor.x = (cursor.x + 1) % SIZE;
-                break;
+void solve() {
+    int base[9][9];
+    int counter = 0;
+    memcpy(base, grid, sizeof(grid));
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (base[i][j] != 0) {
+                continue;
             }
-            printf("%d,%d\n", cursor.x, cursor.y);
-        }
-        if (key >= '0' && key <= '9') {
-            grid[cursor.y][cursor.x] = key - '0';
+            int error = 0;
+            if (grid[i][j] != 9) {
+                grid[i][j] = grid[i][j] + 1;
+            } else {
+                error = 1;
+            }
+
+            cursor.x = j;
+            cursor.y = i;
+            checkGridStatus();
+            if (error == 1) {
+                errors[i][j] = 1;
+            }
+
+            printGrid();
+            printf("%d\n", counter++);
+            // Sleep(200);
+
+            if (errors[i][j] != 0 && grid[i][j] != 9) {
+                j--;
+            } else if (errors[i][j] != 0) {
+                grid[i][j] = 0;
+                do {
+                    if (j != 0) {
+                        j--;
+                    } else {
+                        i--;
+                        j = 8;
+                    }
+
+                } while (base[i][j] != 0);
+                j--;
+            }
         }
     }
+}
 
+int main() {
+    printGrid();
+    system("pause");
+    /*
+        int x = 1;
+        int key;
+        while (x == 1) {
+            checkGridStatus();
+            printGrid();
+            key = _getch();
+            system("cls");
+            printf("%d\n", key);
+            if (key == 224) {
+                switch (_getch()) {
+                case KEY_UP:
+                    cursor.y = (cursor.y - 1 + SIZE) % SIZE;
+                    break;
+                case KEY_DOWN:
+                    cursor.y = (cursor.y + 1) % SIZE;
+                    break;
+                case KEY_LEFT:
+                    cursor.x = (cursor.x - 1 + SIZE) % SIZE;
+                    break;
+                case KEY_RIGHT:
+                    cursor.x = (cursor.x + 1) % SIZE;
+                    break;
+                }
+                printf("%d,%d\n", cursor.x, cursor.y);
+            }
+            if (key >= '0' && key <= '9') {
+                grid[cursor.y][cursor.x] = key - '0';
+            }
+        }
+    */
+    solve();
     system("pause");
     return 0;
 }
