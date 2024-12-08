@@ -11,8 +11,8 @@ typedef struct {
 } Cell;
 
 typedef struct {
-    int x;
-    int y;
+    int row;
+    int col;
 } Cursor;
 
 typedef enum {
@@ -71,13 +71,13 @@ const CellColors FAIL_SELECTED = {WHITE, RED};
 void initializeGrid(Cell grid[9][9]);
 void printGrid(Cell grid[9][9], Cursor cursor);
 void printOptions();
-bool checkCell(Cell grid[9][9], int row, int column);
+bool checkCell(Cell grid[9][9], Cursor cursor);
 void checkGrid(Cell grid[9][9]);
-bool solveGrid(Cell grid[9][9], int row, int column);
+bool solveGrid(Cell grid[9][9], Cursor cursor);
 
 int main() {
     Cell grid[9][9];
-    Cursor cursor = {3, 2};
+    Cursor cursor = {0, 0};
     int key;
 
     initializeGrid(grid);
@@ -109,23 +109,25 @@ int main() {
         switch (key) {
         case KEY_UP:
         case KEY_K:
-            cursor.y = (cursor.y - 1 + 9) % 9;
+            cursor.row = (cursor.row - 1 + 9) % 9;
             break;
         case KEY_DOWN:
         case KEY_J:
-            cursor.y = (cursor.y + 1) % 9;
+            cursor.row = (cursor.row + 1) % 9;
             break;
         case KEY_LEFT:
         case KEY_H:
-            cursor.x = (cursor.x - 1 + 9) % 9;
+            cursor.col = (cursor.col - 1 + 9) % 9;
             break;
         case KEY_RIGHT:
         case KEY_L:
-            cursor.x = (cursor.x + 1) % 9;
+            cursor.col = (cursor.col + 1) % 9;
             break;
         case KEY_S:
         case KEY_s:
-            solveGrid(grid, 0, 0);
+            cursor.col = 0;
+            cursor.row = 0;
+            solveGrid(grid, cursor);
             break;
         case KEY_C:
         case KEY_c:
@@ -136,11 +138,11 @@ int main() {
             return 0;
         }
         if (key >= '0' && key <= '9') {
-            grid[cursor.y][cursor.x].value = key - '0';
-            if (grid[cursor.y][cursor.x].error) {
+            grid[cursor.row][cursor.col].value = key - '0';
+            if (grid[cursor.row][cursor.col].error) {
                 checkGrid(grid);
             } else {
-                checkCell(grid, cursor.y, cursor.x);
+                checkCell(grid, cursor);
             }
         }
     }
@@ -165,11 +167,11 @@ void printGrid(Cell grid[9][9], Cursor cursor) {
             if (j % 3 == 0) {
                 printf("|");
             }
-            if (cursor.x == j && cursor.y == i && grid[i][j].error) {
+            if (cursor.col == j && cursor.row == i && grid[i][j].error) {
                 setColor(FAIL_SELECTED);
             } else if (grid[i][j].error) {
                 setColor(FAIL);
-            } else if (cursor.x == j && cursor.y == i) {
+            } else if (cursor.col == j && cursor.row == i) {
                 setColor(SELECTED);
             }
 
@@ -193,37 +195,37 @@ void printOptions() {
     printf("   Press %c to solve\n", KEY_S);
     printf("   Press %c to clear\n", KEY_C);
 }
-bool checkCell(Cell grid[9][9], int row, int column) {
-    if (grid[row][column].value == 0) {
+bool checkCell(Cell grid[9][9], Cursor cursor) {
+    if (grid[cursor.row][cursor.col].value == 0) {
         return true;
     }
 
-    int value = grid[row][column].value;
+    int value = grid[cursor.row][cursor.col].value;
     bool error = false;
     for (int i = 0; i < 9; i++) {
-        if (i != column && grid[row][i].value == value) {
-            grid[row][i].error = true;
+        if (i != cursor.col && grid[cursor.row][i].value == value) {
+            grid[cursor.row][i].error = true;
             error = true;
         }
     }
     for (int i = 0; i < 9; i++) {
-        if (i != row && grid[i][column].value == value) {
-            grid[i][column].error = true;
+        if (i != cursor.row && grid[i][cursor.col].value == value) {
+            grid[i][cursor.col].error = true;
             error = true;
         }
     }
-    int xBox = row / 3 * 3;
-    int yBox = column / 3 * 3;
+    int xBox = cursor.row / 3 * 3;
+    int yBox = cursor.col / 3 * 3;
     for (int i = xBox; i < xBox + 3; i++) {
         for (int j = yBox; j < yBox + 3; j++) {
-            if (i != row && j != column && grid[i][j].value == value) {
+            if (i != cursor.row && j != cursor.col && grid[i][j].value == value) {
                 grid[i][j].error = true;
                 error = true;
             }
         }
     }
 
-    grid[row][column].error = error;
+    grid[cursor.row][cursor.col].error = error;
     return !error;
 }
 void checkGrid(Cell grid[9][9]) {
@@ -235,32 +237,40 @@ void checkGrid(Cell grid[9][9]) {
     for (int i = 0; i < 9; i++) {
         for (int j = 0; j < 9; j++) {
             if (grid[i][j].value != 0) {
-                checkCell(grid, i, j);
+                Cursor cursor;
+                cursor.row = i;
+                cursor.col = j;
+                checkCell(grid, cursor);
             }
         }
     }
 }
 
-bool solveGrid(Cell grid[9][9], int row, int column) {
+bool solveGrid(Cell grid[9][9], Cursor cursor) {
     static int counter = 0;
-    Cursor cursor = {column, row};
-    if (row == 9) { // no hay mas filas
+    if (cursor.row == 9) { // no hay mas filas
         printf("Numeros probados: %d\n", counter);
+        counter = 0;
         return true;
-    } else if (column == 9) { // no hay mas columnas en esta fila
-        return solveGrid(grid, row + 1, 0);
-    } else if (grid[row][column].value != 0) { // ya existe un valor
-        return solveGrid(grid, row, column + 1);
+    } else if (cursor.col == 9) { // no hay mas columnas en esta fila
+        cursor.row += 1;
+        cursor.col = 0;
+        return solveGrid(grid, cursor);
+    } else if (grid[cursor.row][cursor.col].value != 0) { // ya existe un valor
+        cursor.col += 1;
+        return solveGrid(grid, cursor);
     } else { // probamos valores
         for (int i = 1; i < 10; i++) {
             counter++;
-            grid[row][column].value = i;
-            bool isValid = checkCell(grid, row, column);
+            grid[cursor.row][cursor.col].value = i;
+            bool isValid = checkCell(grid, cursor);
             printGrid(grid, cursor);
-            if (isValid && solveGrid(grid, row, column + 1)) {
+            cursor.col += 1;
+            if (isValid && solveGrid(grid, cursor)) {
                 return true;
             }
-            grid[row][column].value = 0;
+            cursor.col -= 1;
+            grid[cursor.row][cursor.col].value = 0;
             for (int i = 0; i < 9; i++) {
                 for (int j = 0; j < 9; j++) {
                     grid[i][j].error = false;
