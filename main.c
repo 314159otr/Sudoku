@@ -29,6 +29,8 @@ typedef enum {
     KEY_s = 115,
     KEY_Q = 81,
     KEY_q = 113,
+    KEY_C = 67,
+    KEY_c = 99,
 } Keys;
 
 typedef enum {
@@ -65,178 +67,30 @@ const CellColors NORMAL = {BLACK, WHITE};
 const CellColors SELECTED = {WHITE, BLACK};
 const CellColors FAIL = {RED, WHITE};
 const CellColors FAIL_SELECTED = {WHITE, RED};
-/*
-void printGrid() {
-    for (int i = 0; i < 9; i++) {
-        if (i % 3 == 0) {
-            printf("+---------+---------+---------+\n");
-        }
-        for (int j = 0; j < 9; j++) {
-            if (j % 3 == 0) {
-                printf("|");
-            }
-            if (cursor.x == j && cursor.y == i) {
-                setColor(SELECTED);
-                if (errors[i][j] == 1) {
-                    setColor(FAIL_SELECTED);
-                }
 
-            } else if (errors[i][j] == 1) {
-                setColor(FAIL);
-            }
-
-            if (grid[i][j] == 0) {
-                printf("[ ]");
-            } else {
-                printf("[%d]", grid[i][j]);
-            }
-            setColor(NORMAL);
-        }
-        printf("|\n");
-    }
-    printf("+---------+---------+---------+\n");
-}
-
-void checkGridStatus() {
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++) {
-            errors[i][j] = 0;
-        }
-    }
-
-    for (int i = 0; i < 9; i++) {
-        unsigned short seen = 0;
-        unsigned short rowRepeats = 0;
-        for (int j = 0; j < 9; j++) {
-            if (grid[i][j] == 0)
-                continue;
-            unsigned short flag = 1 << (grid[i][j] - 1); // ex: 5 - 1 = 4 -> 000000001 << 4 = 000010000 -> represents the fifth bit
-            if (seen & flag) {
-                rowRepeats |= flag;
-            } else {
-                seen |= flag;
-            }
-        }
-        for (int j = 0; j < 9; j++) {
-            if ((1 << (grid[i][j] - 1)) & rowRepeats) {
-                errors[i][j] = 1;
-            }
-        }
-    }
-    for (int j = 0; j < 9; j++) {
-        unsigned short seen = 0;
-        unsigned short colRepeats = 0;
-        for (int i = 0; i < 9; i++) {
-            if (grid[i][j] == 0)
-                continue;
-            unsigned short flag = 1 << (grid[i][j] - 1);
-            if (seen & flag) {
-                colRepeats |= flag;
-            } else {
-                seen |= flag;
-            }
-        }
-        for (int i = 0; i < 9; i++) {
-            if ((1 << (grid[i][j] - 1)) & colRepeats) {
-                errors[i][j] = 1;
-            }
-        }
-    }
-    for (int startRow = 0; startRow < 9; startRow += 3) {
-        for (int startCol = 0; startCol < 9; startCol += 3) {
-            unsigned short seen = 0;
-            unsigned short boxRepeats = 0;
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-                    if (grid[i + startRow][j + startCol] == 0)
-                        continue;
-                    unsigned short flag = 1 << (grid[i + startRow][j + startCol] - 1);
-                    if (seen & flag) {
-                        boxRepeats |= flag;
-                    } else {
-                        seen |= flag;
-                    }
-                }
-            }
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-                    if ((1 << grid[i + startRow][j + startCol] - 1) & boxRepeats) {
-                        errors[i + startRow][j + startCol] = 1;
-                    }
-                }
-            }
-        }
-    }
-}
-
-void solve() {
-    int base[9][9];
-    int counter = 0;
-    memcpy(base, grid, sizeof(grid));
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++) {
-            if (base[i][j] != 0) {
-                continue;
-            }
-            int error = 0;
-            if (grid[i][j] != 9) {
-                grid[i][j] = grid[i][j] + 1;
-            } else {
-                error = 1;
-            }
-
-            cursor.x = j;
-            cursor.y = i;
-            checkGridStatus();
-            if (error == 1) {
-                errors[i][j] = 1;
-            }
-
-            printGrid();
-            printf("%d\n", counter++);
-            // Sleep(200);
-
-            if (errors[i][j] != 0 && grid[i][j] != 9) {
-                j--;
-            } else if (errors[i][j] != 0) {
-                grid[i][j] = 0;
-                do {
-                    if (j != 0) {
-                        j--;
-                    } else {
-                        i--;
-                        j = 8;
-                    }
-
-                } while (base[i][j] != 0);
-                j--;
-            }
-        }
-    }
-}*/
 void initializeGrid(Cell grid[9][9]);
 void printGrid(Cell grid[9][9], Cursor cursor);
 void printOptions();
 bool checkCell(Cell grid[9][9], int row, int column);
 void checkGrid(Cell grid[9][9]);
 bool solveGrid(Cell grid[9][9], int row, int column);
-int main() {
 
+int main() {
     Cell grid[9][9];
     Cursor cursor = {3, 2};
     int key;
 
     initializeGrid(grid);
     int sudoku[9][9] = {
-        {5, 3, 0, 0, 7, 0, 0, 0, 0},
-        {6, 0, 0, 1, 9, 5, 0, 0, 0},
-        {0, 9, 8, 0, 0, 0, 0, 6, 0},
-        {8, 0, 0, 0, 6, 0, 0, 0, 3},
-        {4, 0, 0, 8, 0, 3, 0, 0, 1},
-        {7, 0, 0, 0, 2, 0, 0, 0, 6},
-        {0, 6, 0, 0, 0, 0, 2, 8, 0},
-        {0, 0, 0, 4, 1, 9, 0, 0, 5},
-        {0, 0, 0, 0, 8, 0, 0, 7, 9}
+        {0, 1, 5, 0, 7, 0, 0, 0, 0},
+        {4, 0, 0, 8, 0, 0, 7, 5, 0},
+        {0, 0, 8, 0, 0, 9, 0, 1, 6},
+        {9, 6, 4, 1, 0, 7, 0, 3, 0},
+        {0, 8, 2, 3, 9, 0, 5, 0, 0},
+        {5, 0, 0, 0, 0, 4, 0, 9, 0},
+        {0, 2, 0, 4, 1, 0, 8, 0, 0},
+        {0, 0, 1, 7, 0, 3, 9, 0, 4},
+        {0, 0, 0, 9, 2, 0, 0, 6, 5}
     };
     for (int i = 0; i < 9; i++) {
         for (int j = 0; j < 9; j++) {
@@ -273,14 +127,14 @@ int main() {
         case KEY_s:
             solveGrid(grid, 0, 0);
             break;
+        case KEY_C:
+        case KEY_c:
+            initializeGrid(grid);
+            break;
         case KEY_Q:
         case KEY_q:
-            printGrid(grid, cursor);
-            system("pause");
             return 0;
         }
-        printf("Key:%d\n", key);
-        printf("Cursor (%d,%d)\n", cursor.x, cursor.y);
         if (key >= '0' && key <= '9') {
             grid[cursor.y][cursor.x].value = key - '0';
             if (grid[cursor.y][cursor.x].error) {
@@ -329,22 +183,18 @@ void printGrid(Cell grid[9][9], Cursor cursor) {
         printf("|\n");
     }
     printf("   +---------+---------+---------+\n");
+    printf("\n");
 }
 
 void printOptions() {
-    printf("\n");
     printf("   Use the arrow keys to move the cursor\n");
     printf("   Press 0-9 to place a number\n");
-    printf("   Press Q to quit\n");
-    printf("   Press S to solve\n");
+    printf("   Press %c to quit\n", KEY_Q);
+    printf("   Press %c to solve\n", KEY_S);
+    printf("   Press %c to clear\n", KEY_C);
 }
 bool checkCell(Cell grid[9][9], int row, int column) {
     if (grid[row][column].value == 0) {
-        for (int i = 0; i < 9; i++) {
-            for (int j = 0; j < 9; j++) {
-                grid[i][j].error = false;
-            }
-        }
         return true;
     }
 
@@ -376,7 +226,6 @@ bool checkCell(Cell grid[9][9], int row, int column) {
     grid[row][column].error = error;
     return !error;
 }
-
 void checkGrid(Cell grid[9][9]) {
     for (int i = 0; i < 9; i++) {
         for (int j = 0; j < 9; j++) {
@@ -393,10 +242,10 @@ void checkGrid(Cell grid[9][9]) {
 }
 
 bool solveGrid(Cell grid[9][9], int row, int column) {
+    static int counter = 0;
     Cursor cursor = {column, row};
-    system("cls");
-    printGrid(grid, cursor);
     if (row == 9) { // no hay mas filas
+        printf("Numeros probados: %d\n", counter);
         return true;
     } else if (column == 9) { // no hay mas columnas en esta fila
         return solveGrid(grid, row + 1, 0);
@@ -404,57 +253,20 @@ bool solveGrid(Cell grid[9][9], int row, int column) {
         return solveGrid(grid, row, column + 1);
     } else { // probamos valores
         for (int i = 1; i < 10; i++) {
+            counter++;
             grid[row][column].value = i;
-            if (checkCell(grid, row, column) && solveGrid(grid, row, column + 1)) {
+            bool isValid = checkCell(grid, row, column);
+            printGrid(grid, cursor);
+            if (isValid && solveGrid(grid, row, column + 1)) {
                 return true;
             }
-            system("cls");
-            printGrid(grid, cursor);
             grid[row][column].value = 0;
-            checkCell(grid, row, column);
+            for (int i = 0; i < 9; i++) {
+                for (int j = 0; j < 9; j++) {
+                    grid[i][j].error = false;
+                }
+            }
         }
-        system("cls");
-        checkCell(grid, row, column);
         return false;
     }
 }
-/*
-int main2() {
-    printGrid();
-    system("pause");
-    /*
-        int x = 1;
-        int key;
-        while (x == 1) {
-            checkGridStatus();
-            printGrid();
-            key = _getch();
-            system("cls");
-            printf("%d\n", key);
-            if (key == 224) {
-                switch (_getch()) {
-                case KEY_UP:
-                    cursor.y = (cursor.y - 1 + 9) % 9;
-                    break;
-                case KEY_DOWN:
-                    cursor.y = (cursor.y + 1) % 9;
-                    break;
-                case KEY_LEFT:
-                    cursor.x = (cursor.x - 1 + 9) % 9;
-                    break;
-                case KEY_RIGHT:
-                    cursor.x = (cursor.x + 1) % 9;
-                    break;
-                }
-                printf("%d,%d\n", cursor.x, cursor.y);
-            }
-            if (key >= '0' && key <= '9') {
-                grid[cursor.y][cursor.x] = key - '0';
-            }
-        }
-
-solve();
-system("pause");
-return 0;
-}
-*/
